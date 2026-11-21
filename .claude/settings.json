@@ -15,7 +15,9 @@
       "Bash(git branch *)",
       "Bash(git checkout -b *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(gh issue view *)",
+      "Bash(gh pr create *)"
     ],
     "deny": [
       "Bash(rm -rf *)",

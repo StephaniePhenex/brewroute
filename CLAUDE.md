@@ -1,50 +1,52 @@
-# CLAUDE.md
+# CLAUDE.md — BrewRoute Project Constitution
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 1. Project Context & Tech Stack
+- **Overview:** BrewRoute is a seasonal café crawl, interactive map, tasting archive, and transparent raffle platform featuring a sunlit Wes Anderson streetscape aesthetic and a Color-as-Reward check-in mechanic.
+- **Stack:** Next.js 15 (App Router), TypeScript (`strict: true`), Tailwind CSS, PostgreSQL (Supabase), Auth.js / Clerk (Google OAuth + RBAC), Leaflet (`react-leaflet`), Claude Agent SDK (`@anthropic-ai/sdk`), Vitest, Playwright, Vercel.
+- **Modular Documentation (`@imports`):**
+  - Product Context & Personas: @docs/prd.md
+  - User Stories & API Contracts: @docs/user_stories.md
+  - Visual Design Tokens & Motion Rules: @docs/Design.md
+  - System Architecture & DB Schema: @docs/ARCHITECTURE.md
+- **Claude Code Extensibility Index:**
+  - Skills: `.claude/skills/` (`/clear-review`, `/add-feature`)
+  - Sub-Agents: `.claude/agents/` (`security-reviewer`, `test-writer`)
+  - Hooks & Permissions: `.claude/settings.json` (`PreToolUse`, `PostToolUse`, `Stop`)
+  - MCP Servers: `.mcp.json` (Supabase / Playwright / GitHub)
 
-## Project state
+## 2. Architecture Decisions (ADRs)
+- **ADR-1 Server-First Data & Auth:** Use Next.js Server Components for reads and Server Actions / Route Handlers for mutations. Enforce RBAC (`ADMIN` vs. `USER`) server-side on every `/admin/*` route and mutation (`403 Forbidden` on unauthorized calls; `302` redirect on unauthenticated check-ins).
+- **ADR-2 Single Active Season Invariant:** Exactly one season may hold `status = 'ACTIVE'`. Activating a season runs inside a transaction that transitions all other `ACTIVE` seasons to `ARCHIVED`.
+- **ADR-3 Soft-Delete Cafés:** Removing a café sets `cafes.deleted_at` (never hard `DELETE`) so historical reviews remain intact in the archive labeled `(retired)`.
+- **ADR-4 Deterministic & Auditable Raffle:** Count unique cafés reviewed per user per season (`unique_cafes >= min_checkins`). Sort eligible user IDs lexicographically, shuffle via Fisher-Yates driven by `mulberry32` seeded from `public_seed`, persist `pool_snapshot` and `raffle_drawn_at`, and block re-draws with `409 Conflict`.
+- **ADR-5 Color-as-Reward Sync:** Stamped cafés unlock pastel tones across storefront, map pin, and passport card; unstamped cafés render in muted grayscale (`#EAE7E1`).
 
-BrewRoute is a seasonal café-crawl app (map discovery, check-in "stamps", tasting-note archive, AI route concierge, deterministic end-of-season raffle). The repo is currently a **fresh `create-next-app` scaffold** (Next.js 15 App Router, React 19, TypeScript strict, Tailwind v4) plus specs in `docs/`. Almost nothing in the specs is implemented yet: Supabase, auth, Zod, Leaflet, the Claude Agent SDK, Vitest, and Playwright are planned but **not installed**.
+## 3. Coding Conventions & Commands
+- **Commands:** `npm run dev` | `npm run lint` | `npm run typecheck` (`tsc --noEmit`) | `npm run test` | `npm run test:coverage` | `npm run test:e2e` | `npm audit`
+- **Directory & Naming:** App Router route groups (`(public)`, `(explorer)`, `admin/`). UI components in `PascalCase.tsx`; pure domain logic (raffle engine, Haversine route sorter, Zod schemas) in `lib/*.ts` in `camelCase.ts`.
+- **Styling & Fonts:** Map `@docs/Design.md` tokens into Tailwind config; load all 5 fonts via `next/font/google` (never runtime `@import`).
 
-Note: `~/CLAUDE.md` describes an unrelated project (Star-Office-UI) and does not apply here.
+## 4. Testing Strategy, Git & Context Workflow
+- **4-Phase Workflow (`Explore → Plan → Implement → Commit`):** Always explore existing files with `Glob`/`Grep`/`Read` and enter **Plan Mode** (`Shift+Tab`) before editing code.
+- **Strict TDD (`Red → Green → Refactor`):**
+  1. **RED (`test:`):** Commit failing Vitest unit/integration tests mapped to `AC X.Y` in `@docs/user_stories.md` BEFORE writing implementation code (pure `lib/` logic ≥ 90% coverage; repo-wide ≥ 70%).
+  2. **GREEN (`feat:` / `fix:`):** Implement minimal code to pass tests.
+  3. **REFACTOR (`refactor:`):** Clean up while keeping tests green.
+  4. **E2E (`test:e2e`):** Verify critical journeys (OAuth redirect, stamp unlock, archive filter, admin `403`, raffle `409`) via Playwright.
+- **Branching, PR Reviews & AI Disclosure:** Never commit/push directly to `main`. Use feature branches (`feat/issue-<id>-<slug>`) or `git worktree` for parallel tasks. Every PR must apply the **C.L.E.A.R.** review framework and include an **AI Disclosure block** (`% AI-generated`, `Tools/Models used`, `Human verification applied`).
+- **Context & Memory Hygiene:** Run `/clear` between unrelated features, `/compact` when context grows large, and `claude --continue` to resume sessions. Persist architectural learnings in project auto-memory (`MEMORY.md`).
 
-## Commands
+## 5. Security & OWASP Top 10 Guardrails (Do's & Don'ts)
 
-```bash
-npm run dev           # next dev --turbopack (http://localhost:3000)
-npm run build         # next build --turbopack
-npm run lint          # eslint (flat config: next/core-web-vitals + next/typescript + prettier)
-npm run format        # prettier --write .
-npm run format:check
-```
+### DO (Mandatory Practices)
+- **A01 Broken Access Control:** Enforce server-side session & role checks inside every `/admin/*` middleware, Server Action, and Route Handler; enforce ownership checks on review deletion (`403 Forbidden`).
+- **A03 Injection & XSS:** Use parameterized Supabase/ORM queries exclusively; validate all inputs/params with `Zod` schemas in `lib/validations/` and sanitize text (`<`, `>`).
+- **A02/A05 Secrets & Security Config:** Keep secrets in `.env.local` (never committed; protected by Gitleaks + `.claude/settings.json` deny rules) and run `npm audit` in CI.
+- **A10 SSRF & External Links:** Restrict Claude Agent SDK tools (`getSeasonalCafes`, `searchCafeReviews`, `calculateRouteOrder`) to read-only internal DB queries; render external Maps links with `rel="noopener noreferrer"`.
+- **Frontend Fidelity & Quality Gate:** Unify `#3B2621` ink borders, `#F5EFE6` cream fills, hard-offset shadows (`0` blur), rounded corners, and sepia-styled CartoDB Positron Leaflet tiles. Run `npm run typecheck && npm run lint && npm run test` before every commit/PR.
 
-No test runner is configured yet. The spec calls for Vitest (unit: `drawWinners`, Zod schemas, route pruner) and Playwright (e2e: `302`/`403`/`409` paths), with a ≥ 70% coverage target.
-
-Env vars: copy `.env.example` → `.env.local` (Supabase URL/anon/service-role keys, `AUTH_SECRET`, `ANTHROPIC_API_KEY`).
-
-## Specs are the source of truth
-
-Read the relevant doc before implementing a feature — they are detailed and prescriptive:
-
-- `docs/ARCHITECTURE.md` — route tree, middleware/RBAC matrix, DB schema, Server Action contracts (with HTTP codes), Zod boundaries, concierge tool interfaces, raffle algorithm. Items marked `[TODO: Teammate to finalize]` are intentionally undecided (Auth.js vs Clerk, RLS DDL, seed hash, etc.) — ask rather than invent.
-- `docs/user_stories.md` — acceptance criteria per story (AC numbers), including exact UI behaviors and status codes.
-- `docs/Design.md` — design tokens (colors, fonts, borders, radii, hard-offset shadows) in YAML front matter, plus the "color-as-reward" mechanic.
-- `docs/prd.md` — problem, personas (`ADMIN` Organizer, `USER` Explorer), value prop.
-
-`docs/` is excluded from Prettier.
-
-## Key architectural rules (from the specs)
-
-- **Roles & route protection:** `/` is public; `/stamp` and `/concierge` require a session; `/admin/*` requires `ADMIN`. `middleware.ts` redirects missing sessions (`302` to Google OAuth, `callbackUrl` = requested path) and returns `403` for `USER` on admin routes. Server Actions **re-check the session and role on every call** — UI state is never the authority.
-- **Server Action order:** Zod validation → RBAC → SQL. `400` returns inline field errors (modal stays open).
-- **Active season:** exactly one `seasons` row with `status = ACTIVE`; setting a season active archives the previous one.
-- **Soft delete:** cafés use `deleted_at`; live views omit them but their reviews remain and render the café as `"(retired)"`.
-- **Stamps:** a stamp = a distinct café reviewed in a season (`COUNT(DISTINCT cafe_id)`); repeat reviews are stored but add no stamp. Raffle eligibility compares this to `min_checkins`.
-- **Raffle is deterministic** and shared by preview (no write), run (persist; `409` if already drawn), and verify (replay `pool_snapshot`): sort eligible ids → hash `public_seed` → seed `mulberry32` → Fisher–Yates → take `min(winnerCount, pool.length)`. Raffle config is locked after draw.
-- **Concierge:** the three tools (`getSeasonalCafes` → `searchCafeReviews` → `calculateRouteOrder`) run in order; scoring, pruning to the time budget, and nearest-neighbour ordering live in **tool code, not the model**. Formulas and constants (score weights, Haversine × 1.25, 4.8/14 km/h, 20 min per stop) are in `docs/ARCHITECTURE.md` §4.
-- **Color-as-reward UI:** storefront, map pin, and passport card stay grayscale until stamped, then transition (`500ms ease`) to the café's pastel, cycling by `index % 4`.
-
-## Conventions
-
-- Path alias `@/*` → repo root.
-- Prettier: double quotes, semicolons, `trailingComma: "es5"`.
+### DON'T (Strict Prohibitions)
+- **No Client-Only Security:** Never rely solely on hiding UI buttons for `ADMIN` protection or review ownership.
+- **No Destructive Data Ops:** Never hard-delete `cafes` rows and never allow raffle re-draws once `raffle_drawn_at` is set (`409 Conflict`).
+- **No Prototype Copy-Paste:** Never paste single-file Claude Artifact code into production components or use runtime `@import` fonts.
+- **No Unverified Code:** Never push directly to `main`, never commit `.env*` secrets, never use TypeScript `any`, and never use blurred drop shadows (`shadow-sm/md/lg`) or sharp `90deg` corners.

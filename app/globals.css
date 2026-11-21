@@ -1,26 +1,128 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* BrewRoute design tokens — see docs/Design.md */
+@theme {
+  /* Palette */
+  --color-pink: #f7c5d0;
+  --color-paper: #f5efe6;
+  --color-surface: #fcf8f1;
+  --color-pave: #f6efe2;
+  --color-burg: #6b2133;
+  --color-rose: #f2b8c6;
+  --color-sage: #9eb09e;
+  --color-mustard: #d4a84f;
+  --color-slate: #8e9aa3;
+  --color-ink: #3b2621;
+  --color-muted: #6e6a63;
+  --color-water: #b7c9cc;
+  --color-lockedBg: #eae7e1;
+  --color-lockedInk: #6e6a63;
+  --color-lockedLine: #a8a29a;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Typography (variables attached to <html> by next/font in layout.tsx) */
+  --font-display: var(--font-fredoka);
+  --font-label: var(--font-jost);
+  --font-serif: var(--font-cormorant);
+  --font-mono: var(--font-space-mono);
+  --font-sans: var(--font-jakarta);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Radii */
+  --radius-badge: 8px;
+  --radius-slot: 10px;
+  --radius-toast: 14px;
+  --radius-card: 16px;
+  --radius-drawer: 24px;
+
+  /* Hard-offset shadows (zero blur) */
+  --shadow-hard: 3px 3px 0 #3b2621;
+  --shadow-hard-md: 4px 4px 0 #3b2621;
+  --shadow-hard-lg: 6px 6px 0 #3b2621;
+
+  /* Motion */
+  --animate-stamp-in: stampIn 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  --animate-drawer-in: drawerIn 0.25s ease-out both;
+
+  @keyframes stampIn {
+    0% {
+      opacity: 0;
+      transform: rotate(-4deg) scale(1.6);
+    }
+    100% {
+      opacity: 1;
+      transform: rotate(-4deg) scale(1);
+    }
+  }
+
+  @keyframes drawerIn {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-mustard);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .awa-card {
+    padding: 1rem;
+    border-radius: var(--radius-card);
+    border: 2px solid var(--color-ink);
+    box-shadow: var(--shadow-hard);
+    transition:
+      transform 500ms ease,
+      box-shadow 500ms ease,
+      background-color 500ms ease,
+      color 500ms ease,
+      filter 500ms ease;
+  }
+
+  .awa-card[aria-selected="true"],
+  .awa-card[data-selected="true"] {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-hard-lg);
+  }
+
+  .awa-btn {
+    border: 2px solid var(--color-ink);
+    border-radius: 9999px;
+    box-shadow: var(--shadow-hard);
+    transition:
+      transform 80ms ease,
+      box-shadow 80ms ease;
+  }
+
+  .awa-btn:active:not(:disabled) {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--color-ink);
+  }
+
+  .awa-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

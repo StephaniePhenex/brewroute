@@ -1,6 +1,7 @@
 "use client";
 
 import { StorefrontSvg } from "@/components/StorefrontSvg";
+import { stopInteractionProps } from "@/components/explore/stopProps";
 import type { ExploreStop, StopHandlers } from "@/components/explore/types";
 import { formatRating } from "@/lib/exploreUtils";
 
@@ -20,17 +21,10 @@ export function Streetscape({
       {stops.map((s) => (
         <button
           key={s.cafe.id}
-          type="button"
+          {...stopInteractionProps(s, highlightId, { onHover, onOpen })}
           data-testid={`storefront-${s.cafe.id}`}
-          data-highlighted={String(highlightId === s.cafe.id)}
-          aria-label={`Stop ${s.stop}, ${s.cafe.name}, ${s.stamped ? "stamped" : "not stamped"}`}
           style={{ opacity: s.visible ? 1 : 0.38 }}
           className="group relative min-w-[220px] flex-1 transition-opacity duration-500 focus-visible:outline-offset-[-4px] motion-reduce:transition-none"
-          onMouseEnter={() => onHover(s.cafe.id)}
-          onMouseLeave={() => onHover(null)}
-          onFocus={() => onHover(s.cafe.id)}
-          onBlur={() => onHover(null)}
-          onClick={() => onOpen(s.cafe.id)}
         >
           <StorefrontSvg
             index={s.index}

@@ -3,18 +3,19 @@
 import type { Ref } from "react";
 import { STORE_SKINS } from "@/components/StorefrontSvg";
 import { CARD_INKS } from "@/components/explore/skins";
+import { stopInteractionProps } from "@/components/explore/stopProps";
 import type { ExploreStop, StopHandlers } from "@/components/explore/types";
 import { formatRating, skinIndex } from "@/lib/exploreUtils";
 
 export interface PassportCardProps extends StopHandlers {
   stop: ExploreStop;
-  highlighted: boolean;
+  highlightId: string | null;
   ref?: Ref<HTMLButtonElement>;
 }
 
 export function PassportCard({
   stop: s,
-  highlighted,
+  highlightId,
   onHover,
   onOpen,
   ref,
@@ -25,16 +26,10 @@ export function PassportCard({
   return (
     <button
       ref={ref}
-      type="button"
+      {...stopInteractionProps(s, highlightId, { onHover, onOpen })}
       data-testid={`card-${s.cafe.id}`}
-      data-highlighted={String(highlighted)}
-      data-selected={String(highlighted)}
-      aria-label={`Stop ${s.stop}, ${s.cafe.name}, ${s.stamped ? "stamped" : "not stamped"}`}
-      onMouseEnter={() => onHover(s.cafe.id)}
-      onMouseLeave={() => onHover(null)}
-      onFocus={() => onHover(s.cafe.id)}
-      onBlur={() => onHover(null)}
-      onClick={() => onOpen(s.cafe.id)}
+      // Drives the .awa-card lift (globals.css).
+      data-selected={String(highlightId === s.cafe.id)}
       className={`flex min-h-[176px] flex-col gap-2 text-left ${
         s.stamped
           ? "awa-card"

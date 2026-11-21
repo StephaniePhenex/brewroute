@@ -29,7 +29,7 @@ export function PassportGrid({
             key={s.cafe.id}
             ref={(el) => registerCard(s.cafe.id, el)}
             stop={s}
-            highlighted={highlightId === s.cafe.id}
+            highlightId={highlightId}
             onHover={onHover}
             onOpen={onOpen}
           />

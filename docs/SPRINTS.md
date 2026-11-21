@@ -22,13 +22,13 @@ The repo is the Next.js 15.5.29 App Router scaffold (`strict: true`, Tailwind v4
 | :--- | :--- | :--- |
 | Sprint 1 | Schema, RLS, auth middleware, raffle engine | Tokens, fonts, storefronts, EXPLORE shell |
 | Sprint 2 integration | Check-in server contract, organizer actions, CI | Check-in drawer, review archive, organizer screens except raffle |
-| Sprint 2 worktree | Parallel Issue B — raffle dashboard | Parallel Issue A — concierge |
+| Sprint 2 worktree | Issue 12 — raffle dashboard | Issue 11 — concierge |
 
-Neither partner pushes to `main`. Every branch is `feat/issue-<id>-<slug>`, where `<id>` is the GitHub issue number.
+Neither partner pushes to `main`. Branches are `feat/issue-1-<slug>` through `feat/issue-12-<slug>`.
 
 ### File boundary
 
-Sprint 1 tracks do not edit the same feature files. `package.json` and `package-lock.json` are the only shared files. Add dependencies in separate PRs and rebase. Do not edit them during the Sprint 2 worktree window except for the concierge SDK (Parallel Issue A only).
+Sprint 1 tracks do not edit the same feature files. `package.json` and `package-lock.json` are the only shared files. Add dependencies in separate PRs and rebase. Do not edit them during the Sprint 2 worktree window except for the concierge SDK (Issue 11 only).
 
 | Path | Sprint 1 owner |
 | :--- | :--- |
@@ -80,10 +80,10 @@ Strict TDD (`CLAUDE.md`): commit a failing Vitest test mapped to the AC (`test:`
 
 ### Backend track (Partner A)
 
-#### S1-A1 — Finalize SQL DDL, RLS, and Supabase schema
+#### Issue 1 — Finalize Supabase DDL and RLS
 
 - **Milestone:** Sprint 1
-- **Branch:** `feat/issue-<id>-supabase-ddl-rls`
+- **Branch:** `feat/issue-1-supabase-ddl-rls`
 - **Owns:** `supabase/migrations/**`, `docs/ARCHITECTURE.md` (replace the DDL / RLS TODO only)
 - **Does not edit:** `app/**`, `components/**`, `lib/raffleEngine.ts`
 - **Acceptance criteria:**
@@ -96,10 +96,10 @@ Strict TDD (`CLAUDE.md`): commit a failing Vitest test mapped to the AC (`test:`
   - RLS matches `docs/ARCHITECTURE.md`: `anon` reads live data; `USER` inserts and deletes only their reviews; `ADMIN` mutates seasons and cafés.
 - **Done when:** migrations apply on a local Supabase project and the architecture TODO for DDL / RLS is gone.
 
-#### S1-A2 — Auth and RBAC middleware (`302` / `403`)
+#### Issue 2 — Auth and RBAC middleware (`302` / `403`)
 
 - **Milestone:** Sprint 1
-- **Branch:** `feat/issue-<id>-auth-rbac-middleware`
+- **Branch:** `feat/issue-2-auth-rbac-middleware`
 - **Owns:** `middleware.ts`, `lib/auth/**`, `app/api/auth/**`
 - **Does not edit:** explorer or admin UI, `lib/raffleEngine.ts`
 - **Acceptance criteria:**
@@ -109,10 +109,10 @@ Strict TDD (`CLAUDE.md`): commit a failing Vitest test mapped to the AC (`test:`
   - Architecture route table: `/` stays public; `/stamp` and `/concierge` require a session; `/admin/*` requires `ADMIN`.
 - **Done when:** `lib/auth/rbac.ts` is a pure function covered by Vitest (`next` vs `302` vs `403`) and `middleware.ts` calls it. Auth.js vs Clerk is chosen and the architecture session TODO is updated. No admin or stamp pages are built here.
 
-#### S1-A3 — Deterministic raffle engine (**Strict TDD**)
+#### Issue 3 — Deterministic raffle engine (**Strict TDD**)
 
 - **Milestone:** Sprint 1
-- **Branch:** `feat/issue-<id>-raffle-engine`
+- **Branch:** `feat/issue-3-raffle-engine`
 - **Owns:** `lib/raffleEngine.ts`, `lib/raffleEngine.test.ts`
 - **Does not edit:** `app/admin/**`, Supabase clients, UI
 - **Acceptance criteria:**
@@ -120,16 +120,16 @@ Strict TDD (`CLAUDE.md`): commit a failing Vitest test mapped to the AC (`test:`
   - AC 3.3 — same seed and same pool always return the same winners. This function does not write.
   - AC 3.7 — a short non-empty pool returns everyone; an empty pool returns no ids.
   - AC 3.8 — `verifyDraw` recomputes from `pool_snapshot`, `public_seed`, and `winner_count` and reports match or mismatch.
-- **Done when:** the first commit on the branch is a failing `test:` commit for those AC items, followed by `feat:` and any `refactor:`. `lib/raffleEngine.ts` coverage is ≥ 90%. Persistence, `409`, and ticket UI stay in S2-B2.
+- **Done when:** the first commit on the branch is a failing `test:` commit for those AC items, followed by `feat:` and any `refactor:`. `lib/raffleEngine.ts` coverage is ≥ 90%. Persistence, `409`, and ticket UI stay in Issue 12.
 
 ### Frontend track (Partner B)
 
 Mocks only. A café passed into the UI is a TypeScript interface in `lib/types/`, populated from `lib/mocks/`. No Supabase import.
 
-#### S1-B1 — Design tokens and five Google fonts
+#### Issue 4 — Design tokens and five Google fonts
 
 - **Milestone:** Sprint 1
-- **Branch:** `feat/issue-<id>-design-tokens-fonts`
+- **Branch:** `feat/issue-4-design-tokens-fonts`
 - **Owns:** `app/globals.css`, `app/layout.tsx`
 - **Does not edit:** `middleware.ts`, `supabase/**`, `lib/raffleEngine.ts`, `app/page.tsx`
 - **Acceptance criteria:**
@@ -138,22 +138,22 @@ Mocks only. A café passed into the UI is a TypeScript interface in `lib/types/`
   - `app/layout.tsx` loads Fredoka, Jost, Cormorant Garamond, Space Mono, and Plus Jakarta Sans through `next/font/google`. Geist and any runtime `@import` for fonts are removed.
 - **Done when:** the root layout applies those fonts and the starter page inherits the paper canvas. Feature UI is not built in this issue.
 
-#### S1-B2 — Four-stop storefront SVG components
+#### Issue 5 — Four-stop storefront SVG components
 
 - **Milestone:** Sprint 1
-- **Branch:** `feat/issue-<id>-storefront-svgs`
+- **Branch:** `feat/issue-5-storefront-svgs`
 - **Owns:** `components/storefront/**`
-- **Does not edit:** `app/page.tsx` (S1-B3 mounts the component), backend paths
+- **Does not edit:** `app/page.tsx` (Issue 6 mounts the component), backend paths
 - **Acceptance criteria:**
   - AC 2.8 / Design §2 — `index % 4` cycles Warm Cream, Dusty Rose, Muted Sage, and Warm Ochre, including the frame, trim, and awning details in `docs/Design.md`. `viewBox="0 0 320 274"`.
   - AC 4.2 — a `stamped` prop renders full pastel; `stamped={false}` renders muted grayscale (`lockedBg` / `grayscale(0.95)`).
   - Reduced motion disables the stamp animation.
 - **Done when:** the four variants render from props in isolation (a Story-free preview page is unnecessary). No map and no check-in form.
 
-#### S1-B3 — EXPLORE streetscape and CartoDB Positron map shell
+#### Issue 6 — EXPLORE streetscape and CartoDB Positron map shell
 
 - **Milestone:** Sprint 1
-- **Branch:** `feat/issue-<id>-explore-map-shell`
+- **Branch:** `feat/issue-6-explore-map-shell`
 - **Owns:** `app/page.tsx`, `components/explore/**`, `components/map/**`, `lib/types/**`, `lib/mocks/**`
 - **Does not edit:** `middleware.ts`, `supabase/**`, `lib/raffleEngine.ts`, `components/storefront/**` internals (import them only)
 - **Acceptance criteria:**
@@ -162,7 +162,7 @@ Mocks only. A café passed into the UI is a TypeScript interface in `lib/types/`
   - AC 4.5 — tag filter is `AND`. Non-matching pins and cards hide. Non-matching storefronts use opacity `0.38`. `All` resets.
   - AC 4.6 / AC 4.7 — stamped vs unstamped pin and card styles; hover or focus highlights storefront, pin, and card together.
   - AC 4.8 — the dossier drawer shows an average, or `No ratings yet` when there are zero reviews (never `NaN`), plus mock notes and Maps links with `rel="noopener noreferrer"`. The check-in form is not submitted in this sprint.
-  - Leaflet uses CartoDB Positron (`light_all`) with a sepia treatment. Pins are keyboard focusable. `CityMap` takes an optional route overlay so S2-A1 does not modify this file.
+  - Leaflet uses CartoDB Positron (`light_all`) with a sepia treatment. Pins are keyboard focusable. `CityMap` takes an optional route overlay so Issue 11 does not modify this file.
 - **Done when:** `/` renders entirely from `lib/mocks/explore.ts`. The map is client-only (`ssr: false`).
 
 ### Sprint 1 rituals
@@ -188,18 +188,18 @@ Mocks only. A café passed into the UI is a TypeScript interface in `lib/types/`
 **Planning checklist**
 
 - [ ] Sprint 1 PRs are merged. `main` has schema, middleware, raffle engine, tokens, storefronts, and the mock EXPLORE shell.
-- [ ] Integration issues S2-A1 through S2-B1 merge before either worktree is created.
-- [ ] Parallel issues are only S2-A2 and S2-B2.
+- [ ] Issue 7, Issue 8, Issue 9, and Issue 10 merge before either worktree is created.
+- [ ] Parallel issues are only Issue 11 and Issue 12.
 - [ ] Worktrees are created from the same `origin/main` with the commands at the end of this section.
 - [ ] Partner A does not edit `app/concierge/**` or `lib/concierge/**`. Partner B does not edit `app/admin/raffle/**`.
 
-Merge order for the integration issues: S2-A1 check-in, S2-B1 archive, S2-A2 is **not** next — admin tools (S2-C1) and CI (S2-C2) merge next. The worktree pair branches after CI is on `main`.
+Merge Issue 7, then Issue 8, then Issue 9, then Issue 10 to `main`. Issue 11 and Issue 12 start only after those four are on `main`.
 
-### S2-A1 — Check-in ratings (**Strict TDD**)
+### Issue 7 — Check-in ratings (**Strict TDD**)
 
 - **Milestone:** Sprint 2
 - **Owner:** Partner A owns `lib/validations/review.ts`, `app/actions/reviews.ts`, and their tests. Partner B owns `components/dossier/**` after the action tests are green. Same branch, sequential commits, not a worktree pair.
-- **Branch:** `feat/issue-<id>-check-in-ratings`
+- **Branch:** `feat/issue-7-check-in-ratings`
 - **Owns:** those paths plus the progress and stamp updates in `components/explore/**` required to show live stamp state
 - **Does not edit:** `app/admin/**`, `app/concierge/**`, `lib/raffleEngine.ts`, `app/stamp/**`
 - **Acceptance criteria:**
@@ -211,11 +211,11 @@ Merge order for the integration issues: S2-A1 check-in, S2-B1 archive, S2-A2 is 
   - AC 5.6 / AC 6.5 — the stamp header pill shows the four raffle sentences, and sign-out returns `200` and `SIGNED OUT`.
 - **Done when:** a `test:` commit fails on the Zod and `createReview` cases before the `feat:` commit. The drawer submits to the server action.
 
-### S2-B1 — Season-filtered review archive
+### Issue 8 — Season-filtered review archive
 
 - **Milestone:** Sprint 2
 - **Owner:** Partner B
-- **Branch:** `feat/issue-<id>-review-archive`
+- **Branch:** `feat/issue-8-review-archive`
 - **Owns:** `app/stamp/**`, `components/archive/**`, `lib/queries/reviews.ts`
 - **Does not edit:** `app/actions/reviews.ts` create path (call `deleteReview` added in this issue's own `app/stamp/actions.ts` if the check-in file must stay untouched), `app/admin/**`, `app/concierge/**`
 - **Acceptance criteria:**
@@ -225,11 +225,11 @@ Merge order for the integration issues: S2-A1 check-in, S2-B1 archive, S2-A2 is 
   - AC 6.4 — deleting someone else's review returns `403`. Signed-out delete starts OAuth (`302`).
 - **Done when:** the archive reads Supabase and the retired label comes from `cafes.deleted_at`, not a second copy of the café name.
 
-### S2-C1 — Organizer season and café tools (**Strict TDD**)
+### Issue 9 — Organizer season and cafe tools (**Strict TDD**)
 
 - **Milestone:** Sprint 2
 - **Owner:** Partner A owns `lib/validations/season.ts`, `lib/validations/cafe.ts`, `app/admin/actions/seasons.ts`, `app/admin/actions/cafes.ts`, and tests. Partner B owns `app/admin/layout.tsx`, `app/admin/page.tsx`, `app/admin/cafes/**`, and `components/admin/**`.
-- **Branch:** `feat/issue-<id>-organizer-admin`
+- **Branch:** `feat/issue-9-organizer-admin`
 - **Does not edit:** `app/admin/raffle/**`, `lib/raffleEngine.ts`, `app/concierge/**`, `app/stamp/**`
 - **Acceptance criteria:**
   - AC 1.1 — season and café mutations return `403` for a non-`ADMIN`.
@@ -237,26 +237,26 @@ Merge order for the integration issues: S2-A1 check-in, S2-B1 archive, S2-A2 is 
   - AC 2.1–AC 2.10 — map click fills coordinates to 4 decimal places, Zod `400`, `201` create, `200` update, custom tags, soft delete and restore, `(retired)` reviews preserved, stop order and the 4-color cycle, streetscape tab, organizer preview drawer with no check-in form.
 - **Done when:** failing validation tests land in a `test:` commit before implementation. Activating a season is one transaction (ADR-2).
 
-### S2-C2 — CI/CD
+### Issue 10 — CI/CD pipeline and Playwright E2E
 
 - **Milestone:** Sprint 2
 - **Owner:** Partner A
-- **Branch:** `feat/issue-<id>-ci`
+- **Branch:** `feat/issue-10-ci`
 - **Owns:** `.github/workflows/ci.yml`, the `typecheck`, `test`, `test:coverage`, and `test:e2e` scripts in `package.json`
 - **Does not edit:** feature routes
 - **Acceptance criteria:**
   - Pull requests run `npm run typecheck`, `npm run lint`, `npm run test`, and coverage. The workflow fails under 70% repo coverage.
-  - Playwright covers the critical paths named in `CLAUDE.md`: OAuth `302`, stamp unlock, archive filter, admin `403`, raffle `409`. Specs that do not have UI yet are skipped with an explicit comment and enabled by S2-A2 / S2-B2.
+  - Playwright covers the critical paths named in `CLAUDE.md`: OAuth `302`, stamp unlock, archive filter, admin `403`, raffle `409`. Specs that do not have UI yet are skipped with an explicit comment and enabled by Issue 11 and Issue 12.
   - `npm audit` runs in CI. `.env*` is not uploaded.
 - **Done when:** a green run is linked from the PR. Vercel preview is confirmed for `main` without committing secrets.
 
 ### Parallel worktree pair
 
-Create these only after S2-A1, S2-B1, S2-C1, and S2-C2 are on `origin/main`. These are the only two Sprint 2 issues that run side by side.
+Create these only after Issue 7, Issue 8, Issue 9, and Issue 10 are on `origin/main`. These are the only two Sprint 2 issues that run side by side.
 
-| | Parallel Issue A | Parallel Issue B |
+| | Issue 11 | Issue 12 |
 | :--- | :--- | :--- |
-| Issue | S2-A2 AI Route & Tasting Concierge | S2-B2 Organizer raffle dashboard |
+| Issue | AI Route and Tasting Concierge | Organizer raffle audit dashboard |
 | Owner | Partner B | Partner A |
 | Owns | `app/concierge/**`, `lib/concierge/**` | `app/admin/raffle/**` (page, UI, and Server Actions in this folder) |
 | May add | `@anthropic-ai/sdk` in `package.json` on this branch only | nothing in `package.json` |
@@ -264,21 +264,21 @@ Create these only after S2-A1, S2-B1, S2-C1, and S2-C2 are on `origin/main`. The
 
 ```bash
 git fetch origin
-git worktree add -b feat/issue-<CONCIERGE_ID>-ai-concierge ../brewroute-concierge origin/main
-git worktree add -b feat/issue-<RAFFLE_ID>-raffle-dashboard ../brewroute-raffle origin/main
+git worktree add -b feat/issue-11-ai-concierge ../brewroute-concierge origin/main
+git worktree add -b feat/issue-12-raffle-dashboard ../brewroute-raffle origin/main
 ```
 
-Replace the ids after the GitHub issues exist. Run the concierge dev server from `../brewroute-concierge` and the raffle dev server from `../brewroute-raffle` on a different port (`npm run dev -- --port 3001`). Remove the worktrees after both PRs merge:
+Run the concierge dev server from `../brewroute-concierge` and the raffle dev server from `../brewroute-raffle` on a different port (`npm run dev -- --port 3001`). Remove the worktrees after both PRs merge:
 
 ```bash
 git worktree remove ../brewroute-concierge
 git worktree remove ../brewroute-raffle
 ```
 
-#### S2-A2 — AI Route & Tasting Concierge
+#### Issue 11 — AI Route and Tasting Concierge
 
 - **Milestone:** Sprint 2
-- **Branch:** `feat/issue-<id>-ai-concierge`
+- **Branch:** `feat/issue-11-ai-concierge`
 - **Acceptance criteria:**
   - AC 7.1 — prompt, mood chips (default `Quiet / Reading`), flavor chips (default `Fruity / floral`), time budget `60 | 90 | 120 | 180` (default `120`), mode `foot | bike`.
   - AC 7.2 — visible step log, in order: `getSeasonalCafes`, `searchCafeReviews`, `calculateRouteOrder`. Tools are read-only queries. Tag match falls back to all live cafés in the season.
@@ -287,10 +287,10 @@ git worktree remove ../brewroute-raffle
   - AC 7.5 — **Show route on map** goes to `/?route=…`, clears tag filters, highlights stop 1, draws the dashed burgundy polyline (`stroke-dasharray="6 4"`), and shows a dismissible `Concierge route plotted` banner. Implement the handoff by the query param the Sprint 1 map already accepts.
 - **Done when:** scoring and pruning are unit-tested in `lib/concierge/`. The model does not compute the order.
 
-#### S2-B2 — Organizer transparent raffle and audit dashboard
+#### Issue 12 — Organizer raffle audit dashboard
 
 - **Milestone:** Sprint 2
-- **Branch:** `feat/issue-<id>-raffle-dashboard`
+- **Branch:** `feat/issue-12-raffle-dashboard`
 - **Acceptance criteria:**
   - AC 3.1 — eligibility is `COUNT(DISTINCT cafe_id) >= min_checkins`. The table shows total reviews, unique cafés (repeat visits noted), and `Winner`, `Eligible`, or `N short`.
   - AC 3.2 / AC 3.6 — after `raffle_drawn_at` is set, changes to `min_checkins`, `winner_count`, or `public_seed`, and a second run, return `409` and leave the published result in place.
@@ -319,19 +319,19 @@ git worktree remove ../brewroute-raffle
 
 ## Issue index
 
-| ID | Milestone | Owner | Branch slug | Strict TDD |
+| Issue | Milestone | Owner | Branch | Strict TDD |
 | :--- | :--- | :--- | :--- | :--- |
-| S1-A1 | Sprint 1 | A | `supabase-ddl-rls` | No |
-| S1-A2 | Sprint 1 | A | `auth-rbac-middleware` | No |
-| S1-A3 | Sprint 1 | A | `raffle-engine` | Yes |
-| S1-B1 | Sprint 1 | B | `design-tokens-fonts` | No |
-| S1-B2 | Sprint 1 | B | `storefront-svgs` | No |
-| S1-B3 | Sprint 1 | B | `explore-map-shell` | No |
-| S2-A1 | Sprint 2 | A, then B | `check-in-ratings` | Yes |
-| S2-B1 | Sprint 2 | B | `review-archive` | No |
-| S2-C1 | Sprint 2 | A, then B | `organizer-admin` | Yes |
-| S2-C2 | Sprint 2 | A | `ci` | No |
-| S2-A2 | Sprint 2 | B | `ai-concierge` | No |
-| S2-B2 | Sprint 2 | A | `raffle-dashboard` | No |
+| Issue 1 | Sprint 1 | A | `feat/issue-1-supabase-ddl-rls` | No |
+| Issue 2 | Sprint 1 | A | `feat/issue-2-auth-rbac-middleware` | No |
+| Issue 3 | Sprint 1 | A | `feat/issue-3-raffle-engine` | Yes |
+| Issue 4 | Sprint 1 | B | `feat/issue-4-design-tokens-fonts` | No |
+| Issue 5 | Sprint 1 | B | `feat/issue-5-storefront-svgs` | No |
+| Issue 6 | Sprint 1 | B | `feat/issue-6-explore-map-shell` | No |
+| Issue 7 | Sprint 2 | A, then B | `feat/issue-7-check-in-ratings` | Yes |
+| Issue 8 | Sprint 2 | B | `feat/issue-8-review-archive` | No |
+| Issue 9 | Sprint 2 | A, then B | `feat/issue-9-organizer-admin` | Yes |
+| Issue 10 | Sprint 2 | A | `feat/issue-10-ci` | No |
+| Issue 11 | Sprint 2 | B | `feat/issue-11-ai-concierge` | No |
+| Issue 12 | Sprint 2 | A | `feat/issue-12-raffle-dashboard` | No |
 
-S2-A2 and S2-B2 are the only `git worktree` pair.
+Issue 11 and Issue 12 are the only `git worktree` pair. They start after Issue 7, Issue 8, Issue 9, and Issue 10 are merged to `main`.

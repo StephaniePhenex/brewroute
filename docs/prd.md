@@ -1,0 +1,11 @@
+# BrewRoute - Context & Persona
+
+## 1. Problem Statement
+Local coffee enthusiasts and community organizers lack a cohesive, low-friction platform to curate seasonal café-hopping challenges ("crawls"), visualize multi-stop routes on an interactive map, and preserve collective tasting notes. Currently, community leaders rely on scattered spreadsheets, static social media posts, and opaque manual lotteries to coordinate events and reward active members. Consequently, participants struggle to discover curated spots based on specific ambiance or flavor profiles, lose track of their personal check-in progress, and miss out on a centralized, searchable archive of community coffee knowledge.
+
+## 2. Target User Persona
+* **The Community Organizer (`ADMIN`, Ages 24–40):** Passionate local coffee curators, club hosts, or micro-community leaders who love bringing people together around specialty coffee. They want to effortlessly launch seasonal themes, manage curated café directories with geographic pins, and run verifiable, fair end-of-season raffles without spending hours manually counting check-ins in spreadsheets.
+* **The Urban Café Explorer (`USER`, Ages 18–35):** Specialty coffee lovers, remote workers, and weekend city wanderers looking for curated third-wave cafés tailored to their mood (e.g., quiet reading corners, fruity pour-overs, or jazz vibes). They respond best to visual map-guided discovery, quick structured check-ins, searchable peer tasting notes, and the gamified motivation of unlocking end-of-season raffle rewards.
+
+## 3. Core Value Proposition
+A map-driven, community-powered seasonal café crawl and tasting archive that turns solo coffee runs into an interactive city exploration game. By combining synchronized Leaflet map discovery, structured multi-criteria tasting logs, an AI-powered Route & Tasting Concierge (Claude Agent SDK), and a transparent, deterministic end-of-season raffle engine, BrewRoute bridges curated local discovery with verifiable community engagement.

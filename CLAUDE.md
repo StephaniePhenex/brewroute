@@ -10,6 +10,7 @@
   - System Architecture & DB Schema: @docs/ARCHITECTURE.md
 - **Claude Code Extensibility Index:**
   - Skills: `.claude/skills/` (`/clear-review`, `/add-feature`)
+    - `/clear-review <pr-number>`: Read-only C.L.E.A.R. review of a PR. It builds a requirement checklist from the linked Issue and `docs/user_stories.md` ACs, audits the diff, checks TDD commit order, and runs typecheck/lint/coverage. It never posts to GitHub unless you explicitly ask.
   - Sub-Agents: `.claude/agents/` (`security-reviewer`, `test-writer`)
   - Hooks & Permissions: `.claude/settings.json` (`PreToolUse`, `PostToolUse`, `Stop`)
   - MCP Servers: `.mcp.json` (Supabase / Playwright / GitHub)

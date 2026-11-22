@@ -141,6 +141,20 @@ describe("AC 3.7 — short and empty pools", () => {
   );
 });
 
+describe("golden vector (audit stability)", () => {
+  // Pinned output of the published algorithm. If this changes, every past
+  // draw stops verifying — treat a diff here as a breaking audit change.
+  it("pins hash and winners for a fixed seed and pool", () => {
+    const fixedPool = Array.from({ length: 8 }, (_, i) => `user-${i + 1}`);
+    expect(hashSeed("AUTUMN-CRAWL-2026")).toBe(2542423322);
+    expect(drawWinners(fixedPool, "AUTUMN-CRAWL-2026", 3)).toEqual([
+      "user-1",
+      "user-6",
+      "user-3",
+    ]);
+  });
+});
+
 describe("AC 3.8 — verifyDraw", () => {
   const setup = () => {
     const published = drawWinners(pool, seed, 3);

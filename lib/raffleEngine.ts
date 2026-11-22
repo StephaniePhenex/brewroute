@@ -53,7 +53,8 @@ export function mulberry32(seed: number): () => number {
  * `localeCompare`, whose order can differ between runtimes.
  */
 export function normalizePool(userIds: readonly string[]): string[] {
-  return [...new Set(userIds)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  // Ids are unique after the Set, so the comparator never sees a tie.
+  return [...new Set(userIds)].sort((a, b) => (a < b ? -1 : 1));
 }
 
 /**

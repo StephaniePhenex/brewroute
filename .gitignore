@@ -46,4 +46,3 @@ next-env.d.ts
 # e2e artifacts
 playwright-report/
 test-results/
-.playwright-mcp/

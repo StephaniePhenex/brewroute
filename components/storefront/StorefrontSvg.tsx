@@ -1,6 +1,8 @@
 // Storefront façades for the hero streetscape — see docs/Design.md §2.
 // Stops cycle through four skins in lockstep with map pins and passport cards (`index % 4`).
 
+import { useId } from "react";
+
 export interface StoreSkin {
   wall: string;
   frame: string;
@@ -63,7 +65,7 @@ export function StorefrontSvg({
     strokeLinejoin: "round" as const,
   };
   const upperName = name.toUpperCase();
-  const arcId = `arc-${index}-${stop}`;
+  const arcId = useId();
 
   const upper = (cx: number) => (
     <g key={cx}>
@@ -180,7 +182,6 @@ export function StorefrontSvg({
       viewBox="0 0 320 274"
       className={`w-full h-auto block transition-[filter] duration-500 motion-reduce:transition-none ${className}`}
       style={stamped ? undefined : { filter: LOCKED_FILTER }}
-      role="img"
       aria-hidden="true"
       data-stamped={stamped}
     >

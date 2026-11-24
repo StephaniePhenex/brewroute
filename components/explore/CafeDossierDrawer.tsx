@@ -23,6 +23,9 @@ const CRITERIA = [
   { key: "workspaceFriendliness", label: "Workspace friendliness" },
 ] as const;
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export interface CafeDossierDrawerProps {
   stop: ExploreStop;
   onClose: () => void;
@@ -33,6 +36,7 @@ export function CafeDossierDrawer({
   onClose,
 }: CafeDossierDrawerProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = `dossier-${s.cafe.id}`;
   const criteria = criterionAverages(s.reviews);
   const notes = [...s.reviews].sort((a, b) =>
@@ -46,7 +50,25 @@ export function CafeDossierDrawer({
         : null;
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      // aria-modal: keep Tab / Shift+Tab cycling inside the drawer.
+      const dialog = dialogRef.current;
+      if (e.key !== "Tab" || !dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(FOCUSABLE);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !dialog.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !dialog.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => {
@@ -63,6 +85,7 @@ export function CafeDossierDrawer({
         onClick={onClose}
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

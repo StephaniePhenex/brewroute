@@ -9,7 +9,8 @@
   - Visual Design Tokens & Motion Rules: @docs/Design.md
   - System Architecture & DB Schema: @docs/ARCHITECTURE.md
 - **Claude Code Extensibility Index:**
-  - Skills: `.claude/skills/` (`/clear-review`, `/add-feature`)
+  - Skills: `.claude/skills/` (`/clear-review`, `/pr-description`)
+    - `/pr-description`: Drafts a PR title and body for the current branch from its linked Issue ACs, `docs/SPRINTS.md` file boundaries, commit history, and quality-gate results, ending with the exact C.L.E.A.R. and AI Disclosure template from `docs/SPRINTS.md`. It only runs `gh pr create` after you confirm.
   - Sub-Agents: `.claude/agents/` (`security-reviewer`, `test-writer`)
   - Hooks & Permissions: `.claude/settings.json` (`PreToolUse`, `PostToolUse`, `Stop`)
   - MCP Servers: `.mcp.json` (Supabase / Playwright / GitHub)

@@ -14,6 +14,7 @@ import {
   collectTags,
   liveCafes,
   matchesAllTags,
+  raffleCafeIds,
   raffleProgress,
   stampCounter,
   stampedCafeIds,
@@ -68,9 +69,18 @@ export function ExploreView({ data, session, routeOverlay }: ExploreViewProps) {
     [live, data.reviews, stampedIds, selectedTags]
   );
 
-  const highlightId = hoveredId ?? openId;
+  // A concierge route (Issue 11) highlights its first stop until the user
+  // hovers or opens another café.
+  const highlightId =
+    hoveredId ?? openId ?? routeOverlay?.highlightCafeId ?? null;
   const openStop = stops.find((s) => s.cafe.id === openId) ?? null;
-  const progress = raffleProgress(stampedIds.size, data.season.minCheckins);
+  // Raffle progress uses the eligibility count (retired cafés included), not
+  // the live stamp count shown in the header.
+  const raffleCount = useMemo(
+    () => raffleCafeIds(data.reviews, session, data.season.id).size,
+    [data.reviews, data.season.id, session]
+  );
+  const progress = raffleProgress(raffleCount, data.season.minCheckins);
 
   const registerCard = useCallback(
     (cafeId: string, el: HTMLButtonElement | null) => {

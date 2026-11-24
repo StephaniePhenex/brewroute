@@ -51,13 +51,21 @@ export function matchesAllTags(
   return selected.every((t) => cafe.tags.includes(t));
 }
 
-/** Unique cafés (including later-retired ones) reviewed this season — AC 3.1. */
+/**
+ * Unique cafés the signed-in explorer reviewed this season, including ones
+ * retired since. This is the raffle eligibility count (AC 3.1).
+ */
 export function raffleCafeIds(
-  _reviews: readonly Review[],
-  _session: ExplorerSession | null,
-  _seasonId: string
+  reviews: readonly Review[],
+  session: ExplorerSession | null,
+  seasonId: string
 ): Set<string> {
-  throw new Error("not implemented");
+  if (!session) return new Set();
+  return new Set(
+    reviews
+      .filter((r) => r.userId === session.userId && r.seasonId === seasonId)
+      .map((r) => r.cafeId)
+  );
 }
 
 /** Unique live cafés the signed-in explorer has reviewed this season. */
@@ -67,16 +75,10 @@ export function stampedCafeIds(
   seasonId: string,
   liveIds: ReadonlySet<string>
 ): Set<string> {
-  if (!session) return new Set();
   return new Set(
-    reviews
-      .filter(
-        (r) =>
-          r.userId === session.userId &&
-          r.seasonId === seasonId &&
-          liveIds.has(r.cafeId)
-      )
-      .map((r) => r.cafeId)
+    [...raffleCafeIds(reviews, session, seasonId)].filter((id) =>
+      liveIds.has(id)
+    )
   );
 }
 

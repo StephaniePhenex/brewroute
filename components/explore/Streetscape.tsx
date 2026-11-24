@@ -1,6 +1,6 @@
 "use client";
 
-import { StorefrontSvg } from "@/components/StorefrontSvg";
+import { StorefrontSvg } from "@/components/storefront";
 import { stopInteractionProps } from "@/components/explore/stopProps";
 import type { ExploreStop, StopHandlers } from "@/components/explore/types";
 import { formatRating } from "@/lib/exploreUtils";

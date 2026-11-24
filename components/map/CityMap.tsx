@@ -10,7 +10,7 @@ import {
   TileLayer,
   ZoomControl,
 } from "react-leaflet";
-import { STORE_SKINS } from "@/components/StorefrontSvg";
+import { STORE_SKINS } from "@/components/storefront";
 import { TagFilterBar } from "@/components/map/TagFilterBar";
 import type { CityMapPin, CityMapProps } from "@/components/map/types";
 import { skinIndex } from "@/lib/exploreUtils";

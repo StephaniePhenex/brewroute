@@ -1,7 +1,7 @@
 "use client";
 
 import type { Ref } from "react";
-import { STORE_SKINS } from "@/components/StorefrontSvg";
+import { STORE_SKINS } from "@/components/storefront";
 import { CARD_INKS } from "@/components/explore/skins";
 import { stopInteractionProps } from "@/components/explore/stopProps";
 import type { ExploreStop, StopHandlers } from "@/components/explore/types";

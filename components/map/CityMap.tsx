@@ -12,6 +12,7 @@ import {
 } from "react-leaflet";
 import { STORE_SKINS } from "@/components/storefront";
 import { TagFilterBar } from "@/components/map/TagFilterBar";
+import { initialMapView } from "@/components/map/mapView";
 import type { CityMapPin, CityMapProps } from "@/components/map/types";
 import { skinIndex } from "@/lib/exploreUtils";
 
@@ -128,19 +129,22 @@ export function CityMap({
   onClearTags,
   routeOverlay,
 }: CityMapProps) {
-  // Fit once to the initial (unfiltered) pins; filtering should not jump the map.
-  const initialBounds = useRef(
-    L.latLngBounds(pins.map((p) => [p.cafe.latitude, p.cafe.longitude]))
-  );
+  // Fit once to the initial (unfiltered) pins; filtering should not jump the
+  // map. An empty season falls back to a fixed view instead of empty bounds.
+  const initialView = useRef(initialMapView(pins)).current;
 
   return (
     <div className="relative isolate h-full overflow-hidden rounded-card border-2 border-ink shadow-hard [&_.leaflet-tile-pane]:[filter:sepia(0.35)_saturate(0.85)_brightness(1.02)]">
       <MapContainer
-        bounds={initialBounds.current}
-        boundsOptions={{
-          paddingTopLeft: [40, 90],
-          paddingBottomRight: [40, 40],
-        }}
+        {...(initialView.kind === "bounds"
+          ? {
+              bounds: initialView.bounds,
+              boundsOptions: {
+                paddingTopLeft: [40, 90],
+                paddingBottomRight: [40, 40],
+              },
+            }
+          : { center: initialView.center, zoom: initialView.zoom })}
         zoomControl={false}
         scrollWheelZoom={false}
         className="h-full w-full"

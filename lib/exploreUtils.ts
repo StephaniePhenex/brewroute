@@ -51,6 +51,15 @@ export function matchesAllTags(
   return selected.every((t) => cafe.tags.includes(t));
 }
 
+/** Unique cafés (including later-retired ones) reviewed this season — AC 3.1. */
+export function raffleCafeIds(
+  _reviews: readonly Review[],
+  _session: ExplorerSession | null,
+  _seasonId: string
+): Set<string> {
+  throw new Error("not implemented");
+}
+
 /** Unique live cafés the signed-in explorer has reviewed this season. */
 export function stampedCafeIds(
   reviews: readonly Review[],

@@ -8,6 +8,7 @@ import {
   googleMapsUrl,
   liveCafes,
   matchesAllTags,
+  raffleCafeIds,
   raffleProgress,
   skinIndex,
   stampCounter,
@@ -142,6 +143,36 @@ describe("AC 4.1 / 4.2 — stamped café ids", () => {
       liveIds
     );
     expect([...ids].sort()).toEqual(["cafe-fern-filter", "cafe-paper-lantern"]);
+  });
+});
+
+describe("AC 3.1 / 4.4 — raffle-eligible café ids", () => {
+  it("is empty when signed out", () => {
+    expect(raffleCafeIds([review({})], null, "s1").size).toBe(0);
+  });
+
+  it("counts unique cafés this season, including later-retired ones", () => {
+    const ids = raffleCafeIds(
+      [
+        review({ id: "r1", cafeId: "c1" }),
+        review({ id: "r2", cafeId: "c1" }),
+        review({ id: "r3", cafeId: "c-retired" }),
+        review({ id: "r4", cafeId: "c2", userId: "u-other" }),
+        review({ id: "r5", cafeId: "c3", seasonId: "s0" }),
+      ],
+      MOCK_EXPLORER,
+      "s1"
+    );
+    expect([...ids].sort()).toEqual(["c-retired", "c1"]);
+  });
+
+  it("gives the mock explorer 3 unique cafés (Marigold counts)", () => {
+    const ids = raffleCafeIds(MOCK_REVIEWS, MOCK_EXPLORER, MOCK_SEASON.id);
+    expect([...ids].sort()).toEqual([
+      "cafe-fern-filter",
+      "cafe-marigold",
+      "cafe-paper-lantern",
+    ]);
   });
 });
 

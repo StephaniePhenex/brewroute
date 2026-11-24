@@ -104,17 +104,20 @@ describe("AC 4.2 / 4.4 — streetscape, season header, and progress", () => {
     );
   });
 
-  it("shows the season title and a 2 / 3 raffle progress bar", () => {
+  it("shows the season title and raffle progress by unique cafés (AC 3.1)", () => {
     renderSignedIn();
     expect(
       screen.getByRole("heading", { name: "Autumn Pour-Over Crawl" })
     ).toBeInTheDocument();
+    // Wren reviewed 3 unique cafés, one since retired: eligible, so 3 / 3,
+    // while the stamp counter still shows only the 2 live stamps.
     const bar = screen.getByRole("progressbar", { name: /raffle/i });
-    expect(bar).toHaveAttribute("aria-valuenow", "2");
+    expect(bar).toHaveAttribute("aria-valuenow", "3");
     expect(bar).toHaveAttribute("aria-valuemax", "3");
     expect(
-      screen.getByText("2 / 3 cafés visited to unlock raffle entry")
+      screen.getByText("3 / 3 cafés visited to unlock raffle entry")
     ).toBeInTheDocument();
+    expect(screen.getByText("2/6 STAMPS")).toBeInTheDocument();
   });
 });
 
@@ -262,5 +265,34 @@ describe("AC 4.8 — Café Dossier drawer", () => {
 
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
+describe("AC 7.5 handoff — concierge route overlay", () => {
+  it("highlights the overlay's first stop across storefront, pin, and card", () => {
+    render(
+      <ExploreView
+        data={MOCK_EXPLORE_DATA}
+        session={MOCK_EXPLORER}
+        routeOverlay={{
+          points: [
+            { lat: 49.26, lng: -123.1 },
+            { lat: 49.27, lng: -123.11 },
+          ],
+          highlightCafeId: "cafe-ochre-hour",
+        }}
+      />
+    );
+    for (const el of [
+      storefront("cafe-ochre-hour"),
+      pin("cafe-ochre-hour"),
+      card("cafe-ochre-hour"),
+    ]) {
+      expect(el).toHaveAttribute("data-highlighted", "true");
+    }
+    expect(storefront("cafe-rosehip")).toHaveAttribute(
+      "data-highlighted",
+      "false"
+    );
   });
 });

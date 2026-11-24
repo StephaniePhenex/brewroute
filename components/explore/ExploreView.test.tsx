@@ -266,6 +266,26 @@ describe("AC 4.8 — Café Dossier drawer", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
+
+  it("traps Tab / Shift+Tab inside the open drawer and restores focus on close", async () => {
+    const user = userEvent.setup();
+    renderSignedIn();
+    const trigger = card("cafe-paper-lantern")!;
+    await user.click(trigger);
+    const dialog = screen.getByRole("dialog", { name: "Paper Lantern Coffee" });
+    const close = within(dialog).getByRole("button", { name: "Close dossier" });
+    const apple = within(dialog).getByRole("link", { name: /apple maps/i });
+
+    expect(close).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(apple).toHaveFocus();
+    await user.tab();
+    expect(close).toHaveFocus();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
 });
 
 describe("AC 7.5 handoff — concierge route overlay", () => {

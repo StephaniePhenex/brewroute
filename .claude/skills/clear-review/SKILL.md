@@ -1,8 +1,8 @@
 ---
 name: clear-review
-description: Review a GitHub Pull Request against its linked Issue acceptance criteria, BrewRoute security/architecture guardrails, and TDD commit history using the C.L.E.A.R. framework. Usage: /clear-review <pr-number>
+description: "Review a GitHub Pull Request against its linked Issue acceptance criteria, BrewRoute security/architecture guardrails, and TDD commit history using the C.L.E.A.R. framework. Usage: /clear-review <pr-number>"
 argument-hint: "<pr-number>"
-allowed-tools: Bash(gh pr view *), Bash(gh pr diff *), Bash(gh pr checks *), Bash(gh issue view *), Bash(git log *), Bash(git diff *), Bash(git status), Bash(npm run typecheck), Bash(npm run lint), Bash(npm run test:coverage), Read, Grep, Glob
+allowed-tools: Bash(gh pr view *), Bash(gh pr diff *), Bash(gh pr checks *), Bash(gh issue view *), Bash(gh api graphql *), Bash(git log *), Bash(git diff *), Bash(git show *), Bash(git status), Bash(npm run typecheck), Bash(npm run lint), Bash(npx prettier --check *), Bash(npm run test:coverage), Read, Grep, Glob
 ---
 
 # /clear-review — C.L.E.A.R. Pull Request Review
@@ -21,10 +21,14 @@ Do this **before** looking at code quality.
 
 1. Fetch PR metadata:
    ```bash
-   gh pr view $ARGUMENTS --json number,title,body,headRefName,baseRefName,closingIssuesReferences,commits,files
+   gh pr view $ARGUMENTS --json number,title,body,headRefName,baseRefName,commits,files
+   ```
+   Do not add `closingIssuesReferences` to `--json`; older `gh` releases reject it as an unknown field. Read it through GraphQL instead:
+   ```bash
+   gh api graphql -F o='{owner}' -F r='{repo}' -F n=$ARGUMENTS -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){closingIssuesReferences(first:10){nodes{number title}}}}}'
    ```
 2. Identify the linked Issue number, in this order of precedence:
-   1. `closingIssuesReferences[].number`
+   1. `closingIssuesReferences.nodes[].number` from the GraphQL query (skip to the next rule if the query fails)
    2. `#N` / `Closes #N` / `Fixes #N` in the PR title or body
    3. `issue-N` in `headRefName` (e.g. `feat/issue-6-explore-map-shell` → `6`)
 
@@ -56,7 +60,7 @@ Do this **before** looking at code quality.
    gh pr diff $ARGUMENTS
    ```
    Use `Read`, `Grep`, and `Glob` on the checked-out files for full context when a hunk is insufficient.
-2. Verify **every** checklist item against implementation **and** test files. Mark each `Pass`, `Partial`, or `Fail` with `file:line` evidence. A requirement only passes if it is implemented and covered by a test (or an explicit E2E note for Playwright-only journeys).
+2. Verify **every** checklist item against implementation **and** test files. Mark each `Pass`, `Partial`, or `Fail` with `file:line` evidence. A requirement only passes if it is implemented and covered by a test (or an explicit E2E note for Playwright-only journeys). For a **non-runtime PR** (defined under R below), a requirement passes when the diff implements it, with `file:line` evidence; no test is required.
 3. **If any requirement is missing or incomplete, the verdict MUST be `REQUEST CHANGES`.**
 
 Then audit each C.L.E.A.R. dimension:
@@ -93,14 +97,17 @@ Then audit each C.L.E.A.R. dimension:
   ```bash
   git log --reverse --format='%h %s' <baseRefName>..<headRefName>
   ```
-  (fall back to the `commits` array from `gh pr view` if the branch isn't local). A failing `test:` commit must precede the `feat:`/`fix:` commits it covers; `refactor:` comes after green. Missing RED commits are blocking.
+  (fall back to the `commits` array from `gh pr view` if the branch isn't local). A failing `test:` commit must precede the `feat:`/`fix:` commits it covers; `refactor:` comes after green. Missing RED commits on a runtime PR are blocking.
+- **Non-runtime exemption:** a PR is non-runtime when every commit is `chore:` or `docs:` **and** every changed file is under `.claude/**` or `docs/**`, or is a Markdown file (`*.md`). Any change to `app/**`, `components/**`, `lib/**`, `supabase/**`, `middleware.ts`, `package.json`, a lockfile, or a config file makes it a runtime PR. A non-runtime PR needs no RED commit; verify it with `npm run lint` and `npx prettier --check <changed files>` instead (scope Prettier to the PR's files so pre-existing or untracked files elsewhere don't fail the review). State in the R row that the exemption was applied and why.
 - Run the quality gate and report actual output (do not claim a pass you didn't see):
   ```bash
   npm run typecheck
   npm run lint
+  npx prettier --check <changed files>   # non-runtime PRs
   npm run test:coverage
   ```
   Coverage targets: pure `lib/` logic ≥ 90%, repo-wide ≥ 70%. Run `git status` first; if the PR branch is not the current checkout (or the tree is dirty), say so and state which tree the checks ran against.
+- **Missing scripts:** before running a script, check that it exists on the base branch (`git show <baseRefName>:package.json`). If `typecheck` or `test:coverage` is absent there, report it as `N/A (script not on base)` and do not count it as a failing check. If the PR itself adds runtime code but no matching script, that is still blocking.
 - Report CI status for the PR head (failing required checks are blocking):
   ```bash
   gh pr checks $ARGUMENTS
@@ -150,7 +157,7 @@ Print the review in this exact structure:
 
 **Verdict rules**
 
-- `REQUEST CHANGES` — any requirement `Fail`/`Partial`, any failing check, missing RED commit, or any security/domain guardrail violation.
+- `REQUEST CHANGES` — any requirement `Fail`/`Partial`, any failing check (`N/A (script not on base)` is not a failure), a missing RED commit on a runtime PR, or any security/domain guardrail violation.
 - `APPROVE` — every requirement passes, all checks green, no blocking issues.
 - `COMMENT` — no blocking issues but open questions the author must answer (e.g. ambiguous AC scope).
 

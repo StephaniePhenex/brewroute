@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# clerk cli link and keyless claim files
+.clerk/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

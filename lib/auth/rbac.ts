@@ -80,13 +80,10 @@ export function safeReturnTo(path: string | null | undefined): string {
   if (path.startsWith("//") || path.includes("\\") || hasControlChar(path)) {
     return "/";
   }
+  // Defence in depth: the checks above already keep `path` relative, and a
+  // relative path against a valid base never throws.
   const base = "http://brewroute.invalid";
-  try {
-    if (new URL(path, base).origin !== base) return "/";
-  } catch {
-    return "/";
-  }
-  return path;
+  return new URL(path, base).origin === base ? path : "/";
 }
 
 export function signInLocation(returnTo: string): string {

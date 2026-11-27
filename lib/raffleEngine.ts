@@ -64,11 +64,11 @@ export function normalizePool(userIds: readonly string[]): string[] {
 export function drawWinners(
   userIds: readonly string[],
   publicSeed: string,
-  winnerCount: number,
+  winnerCount: number
 ): string[] {
   if (!Number.isInteger(winnerCount) || winnerCount < 0) {
     throw new RangeError(
-      `winnerCount must be a non-negative integer, got ${winnerCount}`,
+      `winnerCount must be a non-negative integer, got ${winnerCount}`
     );
   }
 
@@ -88,7 +88,7 @@ export function verifyDraw(input: VerifyDrawInput): VerifyDrawResult {
   const expected = drawWinners(
     input.poolSnapshot,
     input.publicSeed,
-    input.winnerCount,
+    input.winnerCount
   );
   const verified =
     expected.length === input.publishedWinners.length &&

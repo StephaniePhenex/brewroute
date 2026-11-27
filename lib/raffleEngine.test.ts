@@ -9,7 +9,7 @@ import {
 
 const pool = Array.from(
   { length: 20 },
-  (_, i) => `user-${String(i).padStart(2, "0")}`,
+  (_, i) => `user-${String(i).padStart(2, "0")}`
 );
 const seed = "AUTUMN-CRAWL-2026";
 
@@ -107,7 +107,7 @@ describe("AC 3.3 — preview determinism, no writes", () => {
 
   it("a different seed changes the outcome", () => {
     expect(drawWinners(pool, "OTHER-SEED-2026", pool.length)).not.toEqual(
-      drawWinners(pool, seed, pool.length),
+      drawWinners(pool, seed, pool.length)
     );
   });
 
@@ -137,7 +137,7 @@ describe("AC 3.7 — short and empty pools", () => {
     "rejects invalid winnerCount %s",
     (n) => {
       expect(() => drawWinners(pool, seed, n)).toThrow(RangeError);
-    },
+    }
   );
 });
 
@@ -177,7 +177,7 @@ describe("AC 3.8 — verifyDraw", () => {
     const outsider = pool.find((u) => !published.includes(u)) as string;
     const tampered = [outsider, ...published.slice(1)];
     expect(verifyDraw({ ...base, publishedWinners: tampered }).verified).toBe(
-      false,
+      false
     );
   });
 
@@ -185,14 +185,14 @@ describe("AC 3.8 — verifyDraw", () => {
     const { published, base } = setup();
     const reordered = [...published].reverse();
     expect(verifyDraw({ ...base, publishedWinners: reordered }).verified).toBe(
-      false,
+      false
     );
   });
 
   it("fails (✗) with the wrong seed", () => {
     const { base } = setup();
     expect(verifyDraw({ ...base, publicSeed: "WRONG-2026" }).verified).toBe(
-      false,
+      false
     );
   });
 
@@ -208,7 +208,7 @@ describe("AC 3.8 — verifyDraw", () => {
         publicSeed: seed,
         winnerCount: 3,
         publishedWinners: [],
-      }),
+      })
     ).toEqual({ verified: true, expected: [] });
   });
 });

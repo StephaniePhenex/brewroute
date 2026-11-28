@@ -4,7 +4,8 @@ import { SIGN_IN_PATH } from "@/lib/auth/rbac";
 
 export const metadata: Metadata = { title: "Sign in · BrewRoute" };
 
-// Google is the only sign-in method enabled on the Clerk instance (AC 5.1).
+// Sign-in methods come from the Clerk Dashboard, not this file. AC 5.1 needs
+// Google to be the only one enabled there (see docs/ARCHITECTURE.md §1).
 // Clerk reads `?redirect_url=` (set by middleware via safeReturnTo) and
 // returns the explorer to the page they were trying to reach. The catch-all
 // segment also serves Clerk's /sign-in/sso-callback step.

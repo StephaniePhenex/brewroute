@@ -41,7 +41,7 @@ middleware.ts                 # session + role gate before RSC render
 - `USER` deleting another user's review → `403`. Deleting one's own review → `200` and stamp counts are recomputed.
 - `signOut` → `200`. Storefronts, pins, and cards return to grayscale.
 
-`[TODO: Teammate to finalize]` Auth.js vs Clerk session claims, the middleware `matcher`, and the OAuth `callbackUrl` shape. The provider must satisfy the database token contract in §2 *Identity & JWT contract*.
+`[TODO: Teammate to finalize]` Auth.js vs Clerk session claims, the middleware `matcher`, and the OAuth `callbackUrl` shape.
 
 ## 2. PostgreSQL (Supabase) Database Schema & RLS Overview
 

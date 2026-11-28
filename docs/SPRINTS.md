@@ -12,7 +12,7 @@ The repo is the Next.js 15.5.29 App Router scaffold (`strict: true`, Tailwind v4
 | :--- | :--- |
 | `app/layout.tsx`, `app/page.tsx`, `app/globals.css` (default Geist fonts and starter page) | `middleware.ts`, `lib/`, `supabase/`, `components/` |
 | `docs/prd.md`, `docs/user_stories.md`, `docs/Design.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md` | `app/stamp`, `app/concierge`, `app/admin` |
-| `.claude/settings.json` | Vitest, Playwright, Leaflet, Supabase, Auth.js / Clerk |
+| `.claude/settings.json` | Vitest, Playwright, Leaflet, Supabase, Clerk |
 
 `docs/ARCHITECTURE.md` still has `[TODO: Teammate to finalize]` markers for SQL DDL / RLS, the auth session shape, and the raffle seed hash. Sprint 1 Backend closes those markers.
 
@@ -32,7 +32,7 @@ Sprint 1 tracks do not edit the same feature files. `package.json` and `package-
 
 | Path | Sprint 1 owner |
 | :--- | :--- |
-| `supabase/**`, `docs/ARCHITECTURE.md` (DDL / RLS sections), `middleware.ts`, `lib/auth/**`, `app/api/auth/**`, `lib/raffleEngine.ts`, `lib/raffleEngine.test.ts` | Partner A |
+| `supabase/**`, `docs/ARCHITECTURE.md` (DDL / RLS sections), `middleware.ts`, `lib/auth/**`, `app/sign-in/**`, `lib/raffleEngine.ts`, `lib/raffleEngine.test.ts` | Partner A |
 | `app/globals.css`, `app/layout.tsx`, `app/page.tsx`, `components/storefront/**`, `components/explore/**`, `components/map/**`, `lib/types/**`, `lib/mocks/**` | Partner B |
 
 ## PR rules (every issue)
@@ -100,11 +100,11 @@ Strict TDD (`CLAUDE.md`): commit a failing Vitest test mapped to the AC (`test:`
 
 - **Milestone:** Sprint 1
 - **Branch:** `feat/issue-2-auth-rbac-middleware`
-- **Owns:** `middleware.ts`, `lib/auth/**`, `app/api/auth/**`
+- **Owns:** `middleware.ts`, `lib/auth/**`, `app/sign-in/**` (Clerk; replaces the Auth.js-only `app/api/auth/**`)
 - **Does not edit:** explorer or admin UI, `lib/raffleEngine.ts`
 - **Acceptance criteria:**
   - AC 1.1 — a signed-in `USER` hitting `/admin/*` gets `403`.
-  - AC 5.1 — no session on a protected explorer path or check-in entry returns `302` to Google OAuth, with `callbackUrl` back to the café view.
+  - AC 5.1 — no session on a protected explorer path or check-in entry returns `302` to `/sign-in?redirect_url=<path+query>` (Clerk, Google), which returns to the café view after sign-in.
   - AC 6.4 — an unauthenticated delete attempt is a `302` to the same OAuth start (action wiring can return the redirect contract; the archive UI is Sprint 2).
   - Architecture route table: `/` stays public; `/stamp` and `/concierge` require a session; `/admin/*` requires `ADMIN`.
 - **Done when:** `lib/auth/rbac.ts` is a pure function covered by Vitest (`next` vs `302` vs `403`) and `middleware.ts` calls it. Auth.js vs Clerk is chosen and the architecture session TODO is updated. No admin or stamp pages are built here.

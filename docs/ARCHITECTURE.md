@@ -45,7 +45,9 @@ middleware.ts                 # session + role gate before RSC render
 
 ## 2. PostgreSQL (Supabase) Database Schema & RLS Overview
 
-Keys are `uuid`. Timestamps are `timestamptz`. Stored text has `<` and `>` stripped. `users`: `id` PK (OAuth subject), `role` (`USER` or `ADMIN`), `display_name` (the `"(you)"` label is rendered, not stored).
+Keys are `uuid`. Timestamps are `timestamptz`. Stored text has `<` and `>` stripped by Zod, and `CHECK`s reject any that slip through. Source of truth: `supabase/migrations/`.
+
+`users`: `id` internal `uuid` PK (target of every FK), `auth_subject` unique `text` (the Clerk user id from the token `sub`, `user_…`; it is not a uuid, so `auth.uid()` is never used), `role` (`USER` or `ADMIN`, default `USER`), `display_name` (the `"(you)"` label is rendered, not stored). Rows are upserted server-side with the secret key at sign-in; clients never write `users`.
 
 ### `seasons`
 
@@ -53,14 +55,14 @@ Keys are `uuid`. Timestamps are `timestamptz`. Stored text has `<` and `>` strip
 | :--- | :--- |
 | `id` | PK. |
 | `name`, `theme` | Name length ≥ 3 after trim. |
-| `status` | `DRAFT` \| `ACTIVE` \| `ARCHIVED`. Exactly one `ACTIVE`. |
+| `status` | `DRAFT` \| `ACTIVE` \| `ARCHIVED`. Exactly one `ACTIVE`. Clients never write it directly; it changes only through `activate_season`. |
 | `min_checkins`, `winner_count` | Integers ≥ 1. Locked once drawn. |
 | `public_seed` | Default `<NAME-SLUG(≤16)>-<YEAR>`. Locked once drawn. |
-| `pool_snapshot` | `jsonb`. Eligible user ids frozen at draw time. |
-| `raffle_drawn_at` | Null until the raffle is finalized. |
-| `winners` | `jsonb` ordered ids. Tickets render `BR-<SEASON>-00N`. |
+| `pool_snapshot` | `jsonb`. Eligible user ids frozen at draw time. Written only by the server (`service_role`). |
+| `raffle_drawn_at` | Null until the raffle is finalized. Written only by the server (`service_role`). |
+| `winners` | `jsonb` ordered ids. Tickets render `BR-<SEASON>-00N`. Written only by the server (`service_role`). |
 
-Create inserts `DRAFT` and selects it as the managed season. **Set active** sets the target to `ACTIVE` and the previous `ACTIVE` row to `ARCHIVED`.
+Create inserts `DRAFT` and selects it as the managed season. **Set active** calls `activate_season` with the organizer's own token; it sets the target to `ACTIVE` and the previous `ACTIVE` row to `ARCHIVED`. **Run transparent raffle** (`runRaffle`, #12) computes the draw on the server and writes `pool_snapshot`, `winners` and `raffle_drawn_at` once with the secret key.
 
 ### `cafes`
 
@@ -91,13 +93,50 @@ Live maps, the streetscape, and the passport omit rows where `deleted_at` is set
 
 Raffle eligibility is `COUNT(DISTINCT cafe_id)` for that user and season, compared with `min_checkins`. A second review of the same café is stored (`201`) and does not add a stamp.
 
+### Constraints, indexes & triggers
+
+| Rule | Enforcement |
+| :--- | :--- |
+| Season name ≥ 3 after trim (≤ 80); `min_checkins`, `winner_count` ≥ 1; `public_seed` 1–64 chars | `CHECK` (`23514` → action `400`) |
+| At most one `ACTIVE` season (ADR-2) | Partial unique index `seasons_single_active` (`23505`) |
+| Exactly one `ACTIVE` season | `public.activate_season(id)` RPC archives the old row and activates the target in one transaction; `PT403` non-admin, `PT404` missing. `security definer`, `search_path = ''`, `EXECUTE` for `authenticated` only. It authorizes **only** with `private.is_admin()`: a definer function can't see the caller's Postgres role, so the token's `role`, `app_role` and `auth.role()` are never trusted. |
+| Concurrent activations | `pg_advisory_xact_lock` plus `select … for update` on the target row: a second caller waits for the first to commit instead of failing on `23505` |
+| New seasons are `DRAFT`; status changes only by activation | `status` is neither insertable nor updatable by clients |
+| Raffle results are server-written | `pool_snapshot`, `winners`, `raffle_drawn_at` are not updatable by `authenticated`; `service_role` holds an explicit column grant |
+| `pool_snapshot`, `winners` are JSON arrays; they and `raffle_drawn_at` are set together | `CHECK` |
+| Raffle lock (AC 3.2 / 3.6) | Trigger `seasons_raffle_lock`: after `raffle_drawn_at` is set, changing `min_checkins`, `winner_count`, `public_seed`, `pool_snapshot`, `winners`, or `raffle_drawn_at` raises `PT409` (PostgREST → HTTP `409`). The action also returns `409`. |
+| Café name 1–80, address non-blank, lat ∈ [−90, 90], lng ∈ [−180, 180], ≥ 1 non-empty tag | `CHECK` |
+| Unique stop order per season | `unique (season_id, sort_order)` `deferrable initially deferred` (reorder in one transaction) |
+| No hard delete of cafés (ADR-3) | No `DELETE` grant, plus trigger `cafes_no_hard_delete` that also blocks the secret key |
+| Review season = café's season | Composite FK `(cafe_id, season_id)` → `cafes (id, season_id)` |
+| Scores 1–5; note 10–500, already trimmed (AC 5.2) | `CHECK` **and** Zod (both layers) |
+| FK delete behaviour | `on delete restrict` everywhere; seasons and cafés are never deleted |
+| Eligibility / archive queries | Indexes `reviews (season_id, user_id, cafe_id)` and `reviews (created_at desc)` |
+
+### Identity & JWT contract
+
+Supabase must receive a JWT with `role = "authenticated"` and `sub = users.auth_subject`. Clerk produces it (#2): Clerk's Supabase integration adds `role: "authenticated"`, and `supabase/config.toml` trusts the Clerk instance under `[auth.third_party.clerk]`. Clerk's custom `app_role` claim is used for middleware page routing only. Authorization never trusts a role claim from the token:
+
+- `private.current_user_id()` maps `auth.jwt() ->> 'sub'` to `users.id`; `reviews.user_id` defaults to it.
+- `private.is_admin()` reads `users.role` from the database, so a promotion or demotion takes effect on the next query.
+
+Both are `security definer` with an empty `search_path`, in the non-exposed `private` schema. `auth.role()` only reads the `role` claim, so nothing here relies on it.
+
 ### RLS
 
-`[TODO: Teammate to finalize]` DDL (`CHECK`s, partial unique index for one `ACTIVE` season, FK delete behavior) and policies:
+RLS is on for all four tables. Supabase's default table grants are revoked; only the grants below exist. The secret key (`service_role`) bypasses RLS and is server-only.
 
-- `anon` may `SELECT` live active-season cafés, season metadata, and reviews.
-- `authenticated` `USER` may insert and delete only their own reviews.
-- `ADMIN` may mutate seasons and cafés. Raffle columns reject updates when `raffle_drawn_at` is not null (enforced again in the action as `409`).
+| Table | `anon` | `USER` | `ADMIN` |
+| :--- | :--- | :--- | :--- |
+| `users` | `id`, `display_name` only | same | same (role changes are server-only) |
+| `seasons` | `SELECT` non-`DRAFT` | same | `SELECT` all; `INSERT`; `UPDATE` of `name`, `theme`, `min_checkins`, `winner_count`, `public_seed` only (status via `activate_season`; raffle results server-only) |
+| `cafes` | `SELECT` cafés in non-`DRAFT` seasons, **including soft-deleted** (archive `"(retired)"`, AC 2.6) | same | `SELECT` all; `INSERT`; `UPDATE` (Remove / Restore set `deleted_at`) |
+| `reviews` | `SELECT` all | `INSERT` own (`user_id` = caller, season `ACTIVE`, café not deleted); `DELETE` own | same as `USER` |
+
+- No role may `DELETE` seasons or cafés, `UPDATE` reviews, or write `users`. Deleting someone else's review affects 0 rows; the action reports `403`.
+- Only `service_role` writes `pool_snapshot`, `winners` and `raffle_drawn_at`; the `PT409` lock then makes the first draw final.
+- Live maps, the streetscape, and the passport read the `public.active_cafes` view (`security_invoker`): cafés in the `ACTIVE` season with `deleted_at is null`, ordered by `sort_order`.
+- Tests: `supabase/tests/database/*.test.sql` (pgTAP, `npx supabase test db`).
 
 ## 3. Server Actions & API Route Contracts
 

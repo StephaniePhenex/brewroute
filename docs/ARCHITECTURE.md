@@ -2,7 +2,7 @@
 
 > Next.js App Router · TypeScript · Supabase (PostgreSQL) · Claude Agent SDK  
 > Roles: `USER` (Explorer), `ADMIN` (Organizer). **Active season** = the single row with `status = ACTIVE`.  
-> HTTP codes are Server Action / Route Handler results. Google OAuth via Auth.js or Clerk. UI state is never the authority.
+> HTTP codes are Server Action / Route Handler results. Google OAuth via Clerk. UI state is never the authority.
 
 ## 1. Next.js App Router Directory & Route Protection
 
@@ -18,30 +18,48 @@ app/
     cafes/page.tsx            #          /admin/cafes   CAFÉS
     raffle/page.tsx           #          /admin/raffle  RAFFLE
   actions/                    # Server Actions: Zod, then RBAC, then SQL
-  api/auth/[...nextauth]/     # OAuth start + callback
-middleware.ts                 # session + role gate before RSC render
+  sign-in/
+    layout.tsx                # ClerkProvider (scoped; root layout has none yet)
+    [[...sign-in]]/page.tsx   # Clerk <SignIn> (Google only) + /sign-in/sso-callback
+middleware.ts                 # clerkMiddleware → lib/auth/middlewareResponse.ts
+lib/auth/
+  rbac.ts                     # pure route decisions: next | 302 | 403
+  middlewareResponse.ts       # Clerk auth() → session → explicit 302 / 403
 ```
 
 | Path | Who | No session | `USER` | `ADMIN` |
 | :--- | :--- | :--- | :--- | :--- |
-| `/` | Public read | `200` | `200` | `200` |
-| `/stamp`, `/concierge` | Explorer | Middleware `302` → Google OAuth | `200` | `200` |
-| `/admin/*` | Organizer | Middleware `302` → Google OAuth | Middleware `403` | `200` |
+| `/`, `/sign-in/*` | Public | `200` | `200` | `200` |
+| `/stamp`, `/concierge` | Explorer | Middleware `302` → `/sign-in` → Google | `200` | `200` |
+| `/admin/*` | Organizer | Middleware `302` → `/sign-in` → Google | Middleware `403` | `200` |
 
-**Middleware** matches `/stamp`, `/concierge`, and `/admin/:path*`.
+**Auth provider: Clerk** (`@clerk/nextjs` 7, Google as the only sign-in method). Chosen over Auth.js because Supabase verifies Clerk session tokens natively (third-party auth), so the app never signs Supabase JWTs itself.
 
-- Missing session → `302` to the Google OAuth start URL. `callbackUrl` is the requested path so a check-in returns to that café.
-- Session role `USER` on `/admin/*` → `403 Forbidden`. A signed-in Explorer cannot reach organizer pages.
-- `/` is unmatched. Signed-out visitors get the grayscale streetscape, map, and passport; the header reads `SIGNED OUT`.
+**Middleware** (`middleware.ts`) runs `clerkMiddleware` on Clerk's recommended matcher: every route except Next internals and static files, plus `/(api|trpc)(.*)`. A third entry always runs it for `/admin`, `/stamp` and `/concierge` paths, in any letter case and even with a static extension (`/admin/export.csv`), and for any percent-encoded path; `lib/auth/middlewareMatcher.test.ts` checks this with Next's own matcher compiler. It runs everywhere so Server Actions and Server Components can call `auth()`. `lib/auth/rbac.ts` decides what is protected. The middleware is the first gate, not the only one: every `/admin` Route Handler and Server Action still checks the role itself (ADR-1).
+
+- **Path matching** is segment-exact after decoding, lowercasing and collapsing slashes. `/admin`, `/admin/…`, `/ADMIN`, `//admin` and `/%61dmin` are admin paths; `/administrator` and `/stampede` aren't. Malformed `%` encodings are treated as admin (fail closed).
+- **Missing session** → explicit `302` (Next and Clerk default to `307`) to `/sign-in?redirect_url=<path+query>`. `redirect_url` is always a same-origin relative path: `safeReturnTo` rejects `//host`, `/\host`, absolute URLs, `javascript:` and control characters, and falls back to `/`. Clerk returns the user there after Google, so a check-in comes back to that café.
+- **Session role `USER` on `/admin/*`** → plain `403 Forbidden`. Signed out on `/admin/*` is a `302` first, never a `403`.
+- **Public routes** (`/`, `/sign-in`) skip `auth()`. Signed-out visitors get the grayscale streetscape, map and passport; the header reads `SIGNED OUT`.
+
+**Session claim contract** (the Clerk session token doubles as the Supabase JWT):
+
+| Claim | Value | Used by |
+| :--- | :--- | :--- |
+| `sub` | Clerk user id (`user_…`) | Supabase: maps to `users.auth_subject` (PR #20, §2) |
+| `role` | `"authenticated"`, added by Clerk's Supabase integration | PostgREST Postgres role |
+| `app_role` | `"USER"` \| `"ADMIN"` from `{{user.public_metadata.role}}` (custom session claim) | Middleware routing only. Only the exact string `ADMIN` grants admin; missing or other values are `USER`. |
+
+RLS never reads `app_role`; it reads `users.role` from the database. If the two disagree, the worst case is an organizer page that loads while its mutations are rejected. Promoting an organizer must set both (Issue #9).
+
+**Environment** (`.env.local`, never committed; pulled with `npx clerk env pull`): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`. The sign-in URL is passed in code (`SIGN_IN_PATH`), not via env.
 
 **Server Actions** load the session again on every call:
 
-- No session on a `USER` mutation (`createReview`, `deleteReview`) → `302` OAuth. Public reads stay `200`.
+- No session on a `USER` mutation (`createReview`, `deleteReview`) → `302` via `signInRedirect(returnTo)` from `lib/auth/rbac.ts`, the same sign-in contract as the middleware (AC 6.4). Public reads stay `200`.
 - Role ≠ `ADMIN` on season, café, or raffle mutations → `403`.
 - `USER` deleting another user's review → `403`. Deleting one's own review → `200` and stamp counts are recomputed.
 - `signOut` → `200`. Storefronts, pins, and cards return to grayscale.
-
-`[TODO: Teammate to finalize]` Auth.js vs Clerk session claims, the middleware `matcher`, and the OAuth `callbackUrl` shape.
 
 ## 2. PostgreSQL (Supabase) Database Schema & RLS Overview
 

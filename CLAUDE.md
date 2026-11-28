@@ -2,7 +2,7 @@
 
 ## 1. Project Context & Tech Stack
 - **Overview:** BrewRoute is a seasonal café crawl, interactive map, tasting archive, and transparent raffle platform featuring a sunlit Wes Anderson streetscape aesthetic and a Color-as-Reward check-in mechanic.
-- **Stack:** Next.js 15 (App Router), TypeScript (`strict: true`), Tailwind CSS, PostgreSQL (Supabase), Auth.js / Clerk (Google OAuth + RBAC), Leaflet (`react-leaflet`), Claude Agent SDK (`@anthropic-ai/sdk`), Vitest, Playwright, Vercel.
+- **Stack:** Next.js 15 (App Router), TypeScript (`strict: true`), Tailwind CSS, PostgreSQL (Supabase), Clerk (Google OAuth + RBAC), Leaflet (`react-leaflet`), Claude Agent SDK (`@anthropic-ai/sdk`), Vitest, Playwright, Vercel.
 - **Modular Documentation (`@imports`):**
   - Product Context & Personas: @docs/prd.md
   - User Stories & API Contracts: @docs/user_stories.md

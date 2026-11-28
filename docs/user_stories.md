@@ -106,7 +106,7 @@
 ---
 
 ## Technical & Security Guardrails (Definition of Done)
-- **Tech Stack:** Next.js (App Router), TypeScript, PostgreSQL (Supabase), Auth.js / Clerk (Google OAuth + RBAC), Leaflet, Claude Agent SDK, Vitest, Playwright, Vercel.
+- **Tech Stack:** Next.js (App Router), TypeScript, PostgreSQL (Supabase), Clerk (Google OAuth + RBAC), Leaflet, Claude Agent SDK, Vitest, Playwright, Vercel.
 - **Server-Side RBAC:** Role checks enforced inside all Server Actions and API Route Handlers (never relying solely on client UI state).
 - **Input Sanitization:** All form payloads and query parameters validated with `Zod` schemas to prevent XSS and SQL injection.
 - **Test Coverage:** Minimum **70% code coverage** across unit/integration tests (Vitest) and critical end-to-end user journeys (Playwright).

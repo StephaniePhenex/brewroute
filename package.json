@@ -15,10 +15,11 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.10.10",
     "leaflet": "^1.9.4",
     "next": "15.5.29",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.1.10",
+    "react-dom": "19.1.10",
     "react-leaflet": "^5.0.0"
   },
   "devDependencies": {

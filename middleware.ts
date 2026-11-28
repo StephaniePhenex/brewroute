@@ -17,5 +17,10 @@ export const config = {
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes.
     "/(api|trpc)(.*)",
+    // Always run for protected segments, even with a static extension
+    // (/admin/export.csv, /stamp/a.png), in any letter case, and for any
+    // percent-encoded path (/%61dmin/x.csv). rbac.ts normalises the path
+    // and decides; /admin Route Handlers still check the role (ADR-1).
+    "/(/*(?:[aA][dD][mM][iI][nN]|[sS][tT][aA][mM][pP]|[cC][oO][nN][cC][iI][eE][rR][gG][eE])(?:/.*)?|.*%.*)",
   ],
 };
